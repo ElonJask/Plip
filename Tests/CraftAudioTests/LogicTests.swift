@@ -217,6 +217,34 @@ final class LogicTests: XCTestCase {
         }
     }
 
+    func testImportGroupsFilesAndCopiesAPreparedFolder() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("plip-import-\(UUID().uuidString)")
+        let source = root.appendingPathComponent("source")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let click = source.appendingPathComponent("click.wav")
+        let space = source.appendingPathComponent("space.wav")
+        try Data([0]).write(to: click)
+        try Data([0]).write(to: space)
+
+        let id = try XCTUnwrap(PackImporter.importSelection([click, space], into: root.appendingPathComponent("packs")))
+        XCTAssertEqual(id, "自定义音效")
+        let manifest = try JSONDecoder().decode(
+            SoundpackManifest.self,
+            from: Data(contentsOf: root.appendingPathComponent("packs/\(id)/manifest.json"))
+        )
+        XCTAssertEqual(manifest.name, "自定义音效")
+        XCTAssertEqual(Set(manifest.keyMappings["default"]?.files ?? []), ["click.wav"])
+        XCTAssertEqual(manifest.keyMappings["space"]?.files, ["space.wav"])
+
+        let prepared = source.appendingPathComponent("Ready Pack")
+        try FileManager.default.createDirectory(at: prepared, withIntermediateDirectories: true)
+        try Data("{}".utf8).write(to: prepared.appendingPathComponent("manifest.json"))
+        let copied = try XCTUnwrap(PackImporter.importSelection([prepared], into: root.appendingPathComponent("packs")))
+        XCTAssertEqual(copied, "ready-pack")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("packs/ready-pack/manifest.json").path))
+    }
+
     func testPitchKeepsShapeAndShortensWhenHigher() {
         let samples: [Float] = [0, 0.5, 1, 0.5, 0, -0.5, -1, -0.5]
         XCTAssertEqual(Pitch.resample([], cents: 100), [])
@@ -247,6 +275,11 @@ final class LogicTests: XCTestCase {
         session.selectPack(id: "cream")
         XCTAssertEqual(fake.selectedPackID, "cream")
         XCTAssertEqual(fake.prepared, ["blue", "cream"])
+
+        let preview = session.preview()
+        XCTAssertEqual(preview?.file.lastPathComponent, "a.wav")
+        XCTAssertEqual(fake.played.count, 2)
+        XCTAssertNil(session.keyDown(keyCode: 0))
     }
 
     private func pack(id: String, name: String, path: String, combo: Bool = false) throws -> Soundpack {

@@ -15,4 +15,5 @@ final class SoundEngine {
     func reprepareCurrentPack() { session.reprepareCurrentPack() }
     func selectPack(id: String) { session.selectPack(id: id) }
     func keyDown(keyCode: UInt16) { session.keyDown(keyCode: keyCode) }
+    func preview() { session.preview() }
 }

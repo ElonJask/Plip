@@ -30,6 +30,14 @@ final class SoundpackStore: ObservableObject {
         packs = SoundpackMerger.merge(found).sorted { $0.manifest.name < $1.manifest.name }
     }
 
+    /// 选中的音频或文件夹写入用户目录，并重新扫描。
+    @discardableResult
+    func importSelection(_ urls: [URL]) throws -> String? {
+        let id = try PackImporter.importSelection(urls, into: userPacksDir)
+        reload()
+        return id
+    }
+
     private func searchDirs() -> [URL] {
         var dirs: [URL] = []
         if let res = Bundle.main.resourceURL {

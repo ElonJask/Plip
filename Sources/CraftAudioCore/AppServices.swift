@@ -47,6 +47,24 @@ public final class StrikeSession {
         if let target { services.prepare(target) }
     }
 
+    /// 换音效包时试听一声。不看静音和免打扰，也不推进连击。
+    @discardableResult
+    public func preview() -> Strike? {
+        guard let pack else { return nil }
+        let context = StrikeContext(muted: false, suppressed: false, comboEnabled: false, masterVolume: services.masterVolume)
+        guard let strike = planner.plan(
+            keyName: "default",
+            now: now(),
+            pack: pack,
+            context: context,
+            jitterUnit: 0.5,
+            fileChoice: 0
+        ) else { return nil }
+        planner.reset()
+        services.play(strike)
+        return strike
+    }
+
     @discardableResult
     public func keyDown(keyCode: UInt16) -> Strike? {
         guard let pack else { return nil }
