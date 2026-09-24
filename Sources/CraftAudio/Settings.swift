@@ -9,7 +9,12 @@ final class Settings: ObservableObject {
         didSet { d.set(masterVolume, forKey: "masterVolume") }
     }
     @Published var muted: Bool {
-        didSet { d.set(muted, forKey: "muted") }
+        didSet {
+            d.set(muted, forKey: "muted")
+            if muted != oldValue {
+                NotificationCenter.default.post(name: .plipMuteChanged, object: nil)
+            }
+        }
     }
     @Published var smartMuteEnabled: Bool {
         didSet { d.set(smartMuteEnabled, forKey: "smartMuteEnabled") }
@@ -42,4 +47,10 @@ final class Settings: ObservableObject {
         selectedPackID = d.string(forKey: "selectedPackID") ?? ""
         blacklistedBundleIDs = d.stringArray(forKey: "blacklistedBundleIDs") ?? []
     }
+}
+
+extension Notification.Name {
+    static let plipMuteChanged = Notification.Name("plipMuteChanged")
+    static let plipPickApp = Notification.Name("plipPickApp")
+    static let plipImportPack = Notification.Name("plipImportPack")
 }
