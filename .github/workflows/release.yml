@@ -1,0 +1,36 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches version
+        run: bash Scripts/check_version.sh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+      - name: Build archive
+        run: bash Scripts/make_app.sh
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          gh release create "v${version}" "artifacts/Plip-v${version}.zip" \
+            --title "Plip ${version}" \
+            --notes "$(cat <<EOF
+          macOS 菜单栏按键音效。
+
+          下载压缩包，解压后将 Plip.app 移入「应用程序」。
+          安装包为临时签名。若系统提示无法验证开发者，请在应用图标上右键并选择打开。
+          开机自启需要 Developer ID 签名，此安装包不包含该签名。
+          EOF
+          )"

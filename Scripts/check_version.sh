@@ -8,4 +8,8 @@ if [[ "$plist" != "$file" ]]; then
   echo "version mismatch: Info.plist=$plist VERSION=$file" >&2
   exit 1
 fi
+if [[ -n "${RELEASE_TAG:-}" && "$RELEASE_TAG" != "v$file" ]]; then
+  echo "tag mismatch: $RELEASE_TAG expected v$file" >&2
+  exit 1
+fi
 echo "version $plist"

@@ -8,7 +8,7 @@ macOS 菜单栏按键音效。无 Dock 图标，不拦截键盘输入。
 
 ## 安装
 
-从 [Releases](https://github.com/ElonJask/Plip/releases) 下载 `Plip.app`，移入「应用程序」后打开。
+从 [Releases](https://github.com/ElonJask/Plip/releases) 下载压缩包，解压后将 `Plip.app` 移入「应用程序」。推送与 `VERSION` 一致的标签 `vX.Y.Z` 后，GitHub Actions 会自动编译并发布该压缩包。
 
 首次启动需要「辅助功能」权限，仅用于监听按键。当前安装包为临时签名。若系统提示无法验证开发者，请在应用图标上右键并选择打开。开机自启需要 Developer ID 签名。
 
