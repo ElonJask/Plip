@@ -10,7 +10,13 @@ macOS 菜单栏按键音效。无 Dock 图标，不拦截键盘输入。
 
 从 [Releases](https://github.com/ElonJask/Plip/releases) 下载压缩包，解压后将 `Plip.app` 移入「应用程序」。推送与 `VERSION` 一致的标签 `vX.Y.Z` 后，GitHub Actions 会自动编译并发布该压缩包。
 
-首次启动需要「辅助功能」权限，仅用于监听按键。当前安装包为临时签名。若系统提示无法验证开发者，请在应用图标上右键并选择打开。开机自启需要 Developer ID 签名。
+首次启动需要「辅助功能」权限，仅用于监听按键。当前安装包为临时签名。移入「应用程序」后执行：
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Plip.app
+```
+
+该命令移除下载隔离标记，用于跳过「无法验证开发者」的拦截。开机自启使用系统登录项，应用必须位于 `/Applications/Plip.app`。勾选后若系统要求确认，面板会显示原因并打开「登录项」。
 
 面板提供音效包、音量与静音。静音快捷键为 ⌥⇧M。
 
