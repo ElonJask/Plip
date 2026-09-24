@@ -1,36 +1,40 @@
 # Plip
 
-macOS 菜单栏里的按键声。敲下去有声音，不占 Dock，也不改你的输入。
+macOS 菜单栏按键音效。无 Dock 图标，不拦截键盘输入。
 
-机械轴用的是真实录音。方块脚步、放置和冰雪也是开源游戏里的真实录音，不是合成的哔哔声。音效在加载时做成不同音高的缓冲，敲击时直接播放。
+机械轴、方块脚步与冰雪音效均为开源录音。音频在加载时预渲染为不同音高，按键时直接播放。
 
-需要 macOS 13 或更新版本。
+系统要求：macOS 13 及以上。
 
 ## 安装
 
-从 [Releases](https://github.com/ElonJask/Plip/releases) 下载 `Plip.app`，放进「应用程序」，双击打开。
+从 [Releases](https://github.com/ElonJask/Plip/releases) 下载 `Plip.app`，移入「应用程序」后打开。
 
-第一次打开会要「辅助功能」权限。Plip 只听按键，不拦截。系统设置里如果提示已损坏，是因为发布包目前用的是本机临时签名，到应用上右键打开一次即可。用 Developer ID 签名后，开机自启才能在登录时真正启动。
+首次启动需要「辅助功能」权限，仅用于监听按键。当前安装包为临时签名。若系统提示无法验证开发者，请在应用图标上右键并选择打开。开机自启需要 Developer ID 签名。
 
-面板里可以换音效包、调音量、静音。⌥⇧M 也能静音，不管当前焦点在不在 Plip 上。
+面板提供音效包、音量与静音。静音快捷键为 ⌥⇧M。
 
-勾选开机自启后，如果系统还要你点允许，面板会写出原因，并打开「登录项」设置。失败不会被悄悄丢掉。
+开机自启若被系统要求确认，面板会显示原因并提供「登录项」入口。
 
-## 自己编译
+## 构建
 
 ```bash
-python3 Scripts/fetch_open_packs.py   # 音效包已在仓库里时可以跳过
+python3 Scripts/fetch_open_packs.py
 bash Scripts/make_app.sh
 open artifacts/Plip.app
 ```
 
-`make_app.sh` 会先跑测试、核对版本，再签名。签名失败就停，不会留一个签坏的包。`swift test --disable-sandbox` 可以单独跑测试。
+仓库已包含音效包时，可跳过第一步。`make_app.sh` 依次执行测试、版本核对与签名，签名失败即停止。单独测试：
+
+```bash
+swift test --disable-sandbox
+```
 
 ## 音效包
 
-十个机械轴来自 [kbsim](https://github.com/tplai/kbsim)（MIT，Thomas Lai）。三个方块世界来自 [minetest_game](https://github.com/luanti-org/minetest_game)（CC BY-SA 3.0）。Minecraft 原版音效没有用。署名在 `Soundpacks/CREDITS.md`。
+机械轴录音来自 [kbsim](https://github.com/tplai/kbsim)（MIT，Thomas Lai）。方块与冰雪录音来自 [minetest_game](https://github.com/luanti-org/minetest_game)（CC BY-SA 3.0）。未使用 Minecraft 原版音效。署名见 `Soundpacks/CREDITS.md`。
 
-| 包 | 听感 |
+| 标识 | 内容 |
 |---|---|
 | real-mx-blue | Cherry MX 青轴 |
 | real-mx-brown | Cherry MX 茶轴 |
@@ -44,11 +48,13 @@ open artifacts/Plip.app
 | real-blue-alps | Alps 蓝轴 |
 | real-mc-steps | 草地、泥土、木板、沙子、雪 |
 | real-mc-stone | 石头、金属、玻璃 |
-| real-ice-snow | 冰、雪、水花 |
+| real-ice-snow | 冰、雪、水 |
 
-空格、回车、退格在多数包里有单独的录音。连击升调只在音效包自己打开这项时才累加，停顿后清零。每次敲击还会在很小的音高范围内抖动，避免连敲听起来像同一声。
+空格、回车与退格在多数音效包中使用独立录音。连击升调由音效包配置决定，停顿后清零。每次按键在设定范围内随机偏移音高。
 
-自己的包放在 `~/Library/Application Support/Plip/Soundpacks/`，面板里有按钮直接打开这个目录。文件夹名和内置包一样时，用你的那份，选择器里只出现一次。
+面板中的「添加音效包」可选择一个或多个音频文件，或一个文件夹。支持 wav、aiff、caf、mp3、m4a。文件名包含 space、enter、return、backspace 时，分别映射到对应按键，其余文件作为默认按键。已包含 `manifest.json` 的文件夹按原配置导入。
+
+导入结果保存在 `~/Library/Application Support/Plip/Soundpacks/`。也可直接在该目录放置如下结构：
 
 ```json
 {
@@ -71,16 +77,20 @@ open artifacts/Plip.app
 }
 ```
 
-键位名还有 `forward_delete`、`shift`、`capslock`、`tab`、`escape`。没有单独录音的键会回到 `default`。`pitch_jitter` 和 `combo_pitch_step` 的单位是半音。
+其余键位名：`forward_delete`、`shift`、`capslock`、`tab`、`escape`。未单独配置的按键使用 `default`。`pitch_jitter` 与 `combo_pitch_step` 的单位为半音。
 
-## 它怎么工作
+## 行为
 
-按键从只听不拦的 CGEventTap 进来。`StrikeSession` 决定这次发哪一个文件、音高和音量。`AudioEngine` 用 8 路播放器轮流放，打得快时最老的尾音会被截掉。
+按键监听使用 CGEventTap，只监听，不拦截。`StrikeSession` 决定音频文件、音高与音量。`AudioEngine` 以 8 路播放器轮换播放，连续输入时截断最早的尾音。
 
-通话应用，或者你正在输入的那个应用自己打开了麦克风，会自动静音。后台的听写不会。前台应用也可以写进黑名单。黑名单在回车或关掉面板时保存。
+通话类应用占用麦克风，或当前前台应用正在使用麦克风时，自动静音。后台听写不触发静音。前台应用名单通过面板中的加号从已安装应用里选择。
 
-可测试的规则在 `Sources/CraftAudioCore`。菜单栏进程在 `Sources/CraftAudio`。版本写在 `VERSION` 和 `Info.plist`，两处必须一样，`Scripts/check_version.sh` 会核对。
+规则代码位于 `Sources/CraftAudioCore`，菜单栏界面位于 `Sources/CraftAudio`。版本同时记录在 `VERSION` 与 `Info.plist`，由 `Scripts/check_version.sh` 核对。
+
+## 平台
+
+当前版本仅支持 macOS。Windows 尚未实现。
 
 ## 许可
 
-代码是 MIT，见 `LICENSE`。音效包各自的许可见 `Soundpacks/CREDITS.md`，CC BY-SA 的部分再分发时要保留署名，并以同样方式共享。
+代码采用 MIT 许可，见 `LICENSE`。音效许可见 `Soundpacks/CREDITS.md`。CC BY-SA 素材再分发时须保留署名，并以相同许可共享。

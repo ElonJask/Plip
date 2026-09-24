@@ -11,5 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Swift tests
         run: swift test --disable-sandbox
+      - name: Release build
+        run: swift build -c release --disable-sandbox
       - name: Version matches Info.plist
         run: bash Scripts/check_version.sh
