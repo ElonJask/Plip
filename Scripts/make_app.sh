@@ -26,6 +26,7 @@ xattr -c "$STAGE/Plip.app/Contents/Info.plist"
 codesign --force --sign "$IDENTITY" "$STAGE/Plip.app"
 codesign --verify --deep --strict "$STAGE/Plip.app"
 
+mkdir -p artifacts
 rm -rf "$APP"
 mv "$STAGE/Plip.app" "$APP"
 trap - EXIT
