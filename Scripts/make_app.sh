@@ -1,41 +1,66 @@
 #!/bin/bash
 # 编译 release 并组装 Plip.app。
-# 默认 ad-hoc 签名，只能本机调试，不能作为开机自启的发布包。
+# ARCH 只能是当前机器的 arm64 或 x86_64。另一种架构由对应的 GitHub runner 编译。
 # 发布签名：CODESIGN_IDENTITY="Developer ID Application: Name (TEAMID)" bash Scripts/make_app.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 IDENTITY="${CODESIGN_IDENTITY:--}"
-APP="artifacts/Plip.app"
-STAGE="$(mktemp -d "${TMPDIR:-/tmp}/craftaudio.XXXXXX")"
+ARCH="${ARCH:-$(uname -m)}"
+case "$ARCH" in
+  arm64) SUFFIX="macos-arm64" ;;
+  x86_64) SUFFIX="macos-x86_64" ;;
+  *) echo "unsupported arch: $ARCH" >&2; exit 1 ;;
+esac
+
+APP="artifacts/Plip-${SUFFIX}.app"
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/plip.XXXXXX")"
 cleanup() { rm -rf "$STAGE"; }
 trap cleanup EXIT
 
+HOST="$(uname -m)"
+if [[ "$ARCH" != "$HOST" ]]; then
+  echo "ARCH=$ARCH but this machine is $HOST; build on the matching runner" >&2
+  exit 1
+fi
 swift build -c release --disable-sandbox
-swift test --disable-sandbox
+if [[ "${SKIP_TEST:-}" != "1" ]]; then
+  swift test --disable-sandbox
+fi
 bash Scripts/check_version.sh
 
+BIN="$(swift build -c release --disable-sandbox --show-bin-path)/CraftAudio"
+if [[ ! -f "$BIN" ]]; then
+  echo "missing binary for $ARCH: $BIN" >&2
+  exit 1
+fi
 mkdir -p "$STAGE/Plip.app/Contents/MacOS" "$STAGE/Plip.app/Contents/Resources"
-cp .build/release/CraftAudio "$STAGE/Plip.app/Contents/MacOS/Plip"
-# 不把 AppleDouble (._*) 和 .DS_Store 打进包
+cp "$BIN" "$STAGE/Plip.app/Contents/MacOS/Plip"
 rsync -a --exclude '.DS_Store' --exclude '._*' Soundpacks "$STAGE/Plip.app/Contents/Resources/"
 cp Info.plist "$STAGE/Plip.app/Contents/"
 xattr -c "$STAGE/Plip.app/Contents/Info.plist"
 
-# 签名失败必须中止，不能带一个签坏的包出去
 codesign --force --sign "$IDENTITY" "$STAGE/Plip.app"
 codesign --verify --deep --strict "$STAGE/Plip.app"
+ARCHS="$(lipo -archs "$STAGE/Plip.app/Contents/MacOS/Plip")"
+if [[ "$ARCHS" != "$ARCH" ]]; then
+  echo "binary arch is '$ARCHS', expected $ARCH" >&2
+  exit 1
+fi
 
 mkdir -p artifacts
 rm -rf "$APP"
-mv "$STAGE/Plip.app" "$APP"
-trap - EXIT
+ditto "$STAGE/Plip.app" "$APP"
 
 VERSION="$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")"
-ZIP="artifacts/Plip-v${VERSION}.zip"
+ZIP="artifacts/Plip-v${VERSION}-${SUFFIX}.zip"
 rm -f "$ZIP"
-# ditto 不会写入 AppleDouble
-ditto -c -k --keepParent "$APP" "$ZIP"
+# 磁盘副本带架构后缀，压缩包根目录必须仍是 Plip.app。
+SHIP="$(mktemp -d "${TMPDIR:-/tmp}/plip-ship.XXXXXX")"
+ditto "$STAGE/Plip.app" "$SHIP/Plip.app"
+ditto -c -k --keepParent "$SHIP/Plip.app" "$ZIP"
+rm -rf "$SHIP" "$STAGE"
+trap - EXIT
 
 echo "Built $APP"
 echo "Archive $ZIP"

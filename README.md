@@ -8,7 +8,14 @@ macOS 菜单栏按键音效。无 Dock 图标，不拦截键盘输入。
 
 ## 安装
 
-从 [Releases](https://github.com/ElonJask/Plip/releases) 下载压缩包，解压后将 `Plip.app` 移入「应用程序」。推送与 `VERSION` 一致的标签 `vX.Y.Z` 后，GitHub Actions 会自动编译并发布该压缩包。
+从 [Releases](https://github.com/ElonJask/Plip/releases) 下载对应压缩包：
+
+| 文件 | 系统 |
+|---|---|
+| `Plip-vX.Y.Z-macos-arm64.zip` | Apple Silicon |
+| `Plip-vX.Y.Z-macos-x86_64.zip` | Intel |
+
+解压后将 `Plip.app` 移入「应用程序」。推送与 `VERSION` 一致的标签 `vX.Y.Z` 后，GitHub Actions 会分别编译这两个安装包并发布。Windows 安装包尚未提供。
 
 首次启动需要「辅助功能」权限，仅用于监听按键。当前安装包为临时签名。移入「应用程序」后执行：
 
@@ -16,7 +23,7 @@ macOS 菜单栏按键音效。无 Dock 图标，不拦截键盘输入。
 xattr -dr com.apple.quarantine /Applications/Plip.app
 ```
 
-该命令移除下载隔离标记，用于跳过「无法验证开发者」的拦截。开机自启使用系统登录项，应用必须位于 `/Applications/Plip.app`。勾选后若系统要求确认，面板会显示原因并打开「登录项」。
+该命令移除下载隔离标记，用于跳过「无法验证开发者」的拦截。开机自启使用系统登录项，需要 Developer ID 签名，且应用必须位于 `/Applications/Plip.app`。当前安装包是临时签名，勾选后面板会显示系统拒绝的原因。
 
 面板提供音效包、音量与静音。静音快捷键为 ⌥⇧M。
 
@@ -27,8 +34,10 @@ xattr -dr com.apple.quarantine /Applications/Plip.app
 ```bash
 python3 Scripts/fetch_open_packs.py
 bash Scripts/make_app.sh
-open artifacts/Plip.app
+open "artifacts/Plip-macos-$(uname -m).app"
 ```
+
+打包只使用当前机器的架构。Apple Silicon 与 Intel 安装包由 GitHub Actions 分别在对应的 runner 上编译。
 
 仓库已包含音效包时，可跳过第一步。`make_app.sh` 依次执行测试、版本核对与签名，签名失败即停止。单独测试：
 
