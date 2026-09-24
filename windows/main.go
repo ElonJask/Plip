@@ -4,11 +4,14 @@ package main
 
 import (
 	"math/rand"
+	"strings"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/jchv/go-webview2/pkg/edge"
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
@@ -113,18 +116,25 @@ type wndClass struct {
 }
 
 type app struct {
-	mu      sync.Mutex
-	packs   []soundpack
-	index   int
-	muted   bool
-	combo   bool
-	volume  float64
-	planner planner
-	player  *player
-	rng     *rand.Rand
-	hwnd    uintptr
-	hook    uintptr
-	icon    uintptr
+	mu          sync.Mutex
+	packs       []soundpack
+	index       int
+	muted       bool
+	combo       bool
+	smart       bool
+	volume      float64
+	planner     planner
+	player      *player
+	rng         *rand.Rand
+	hwnd        uintptr
+	panel       uintptr
+	browser     *edge.Chromium
+	hook        uintptr
+	icon        uintptr
+	bundled     string
+	userPacks   string
+	blocklist   []string
+	panelHeight int
 }
 
 func main() {
@@ -144,11 +154,15 @@ func main() {
 		fatal("没有找到音效包。把 Plip.exe 和 Soundpacks 放在同一层。")
 	}
 	application = &app{
-		packs:  packs,
-		combo:  true,
-		volume: 0.8,
-		player: newPlayer(),
-		rng:    rand.New(rand.NewSource(time.Now().UnixNano())),
+		packs:       packs,
+		combo:       true,
+		smart:       true,
+		volume:      0.8,
+		player:      newPlayer(),
+		rng:         rand.New(rand.NewSource(time.Now().UnixNano())),
+		bundled:     root,
+		userPacks:   userPacks,
+		panelHeight: 280,
 	}
 	application.loadSettings()
 	application.preload()
@@ -245,7 +259,7 @@ func wndProc(hwnd, msgID, wParam, lParam uintptr) uintptr {
 	switch msgID {
 	case wmApp:
 		if lParam == wmRButtonUp || lParam == wmLButtonUp {
-			application.menu()
+			application.openPanel()
 			return 0
 		}
 	case wmKey:
@@ -398,6 +412,15 @@ func (a *app) loadSettings() {
 	if v, _, err := key.GetIntegerValue("Combo"); err == nil {
 		a.combo = v != 0
 	}
+	if v, _, err := key.GetIntegerValue("Smart"); err == nil {
+		a.smart = v != 0
+	}
+	if v, _, err := key.GetIntegerValue("Volume"); err == nil {
+		a.volume = float64(v) / 100
+	}
+	if text, _, err := key.GetStringValue("Blocked"); err == nil && text != "" {
+		a.blocklist = strings.Split(text, "\n")
+	}
 	if name, _, err := key.GetStringValue("Pack"); err == nil {
 		for i, pack := range a.packs {
 			if pack.ID == name {
@@ -423,6 +446,13 @@ func (a *app) saveSettingsLocked() {
 	}
 	_ = key.SetDWordValue("Muted", muted)
 	_ = key.SetDWordValue("Combo", combo)
+	smart := uint32(0)
+	if a.smart {
+		smart = 1
+	}
+	_ = key.SetDWordValue("Smart", smart)
+	_ = key.SetDWordValue("Volume", uint32(a.volume*100))
+	_ = key.SetStringValue("Blocked", strings.Join(a.blocklist, "\n"))
 	if a.index >= 0 && a.index < len(a.packs) {
 		_ = key.SetStringValue("Pack", a.packs[a.index].ID)
 	}

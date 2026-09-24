@@ -1,0 +1,235 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #1f1f1f;
+    --quiet: #616161;
+    --line: rgba(0,0,0,.08);
+    --chip: rgba(0,0,0,.06);
+    --blue: #2e73f2;
+    --warn: #b85c0d;
+    --exit: #c7291f;
+    --alert: #f27347;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; }
+  body {
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .panel {
+    width: 268px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .header, .row, .volume, .apps { padding: 0 14px; }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 12px;
+    padding-bottom: 10px;
+  }
+  .name { font-size: 13px; font-weight: 600; }
+  .pack {
+    margin-left: auto;
+    max-width: 168px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: 0;
+    background: var(--chip);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 5px 8px;
+    font: 500 12px/1.2 -apple-system, "Segoe UI", sans-serif;
+    cursor: pointer;
+  }
+  .pack span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chev { font-size: 8px; }
+  .menu {
+    position: absolute;
+    right: 14px;
+    top: 42px;
+    width: 210px;
+    max-height: 240px;
+    overflow: auto;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    padding: 4px;
+    z-index: 2;
+  }
+  .menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    border-radius: 7px;
+    padding: 6px 8px;
+    font: 500 12px/1.3 -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .menu button[aria-current="true"] { background: var(--chip); }
+  .hidden { display: none; }
+  .alert {
+    width: 100%;
+    border: 0;
+    background: var(--alert);
+    color: #fff;
+    font: 500 12px/1 -apple-system, "Segoe UI", sans-serif;
+    padding: 8px 14px;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .volume { display: flex; align-items: center; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+  .speaker { width: 14px; color: var(--quiet); flex: none; }
+  input[type="range"] { flex: 1; accent-color: var(--blue); height: 16px; }
+  .percent { width: 36px; text-align: right; font: 600 12px/1 ui-rounded, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+  .row { min-height: 30px; display: flex; align-items: center; gap: 8px; padding-top: 5px; padding-bottom: 5px; font-size: 13px; }
+  .key {
+    font: 600 11px/1 ui-rounded, "Segoe UI", sans-serif;
+    background: var(--chip);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .switch { margin-left: auto; width: 32px; height: 18px; border: 0; border-radius: 999px; background: #d0d0d4; position: relative; cursor: pointer; padding: 0; }
+  .switch::after { content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #fff; top: 2px; left: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .switch[aria-checked="true"] { background: #34c759; }
+  .switch[aria-checked="true"]::after { left: 16px; }
+  .hair { height: 1px; background: var(--line); margin-top: 4px; }
+  .note { color: var(--quiet); font-size: 11px; padding: 0 14px 6px; }
+  .warn { color: var(--warn); font-size: 11px; padding: 0 14px 4px; }
+  .link { border: 0; background: transparent; color: var(--ink); font: 500 11px/1 -apple-system, "Segoe UI", sans-serif; padding: 0 14px 8px; cursor: pointer; }
+  .apps { padding-top: 8px; padding-bottom: 8px; }
+  .apps-head { display: flex; align-items: center; color: var(--quiet); font-size: 11px; }
+  .plus { margin-left: auto; width: 22px; height: 22px; border: 0; border-radius: 50%; background: var(--chip); color: var(--ink); font-weight: 650; cursor: pointer; }
+  .app { display: flex; align-items: center; gap: 8px; min-height: 24px; font-size: 12px; font-weight: 500; }
+  .app span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .x { margin-left: auto; border: 0; background: transparent; color: var(--quiet); font-weight: 700; cursor: pointer; }
+  .empty { color: var(--quiet); font-size: 12px; font-weight: 400; }
+  .action { width: 100%; border: 0; background: transparent; color: var(--ink); display: flex; gap: 8px; align-items: center; padding: 7px 14px; font: 12px/1 -apple-system, "Segoe UI", sans-serif; cursor: pointer; }
+  .action.exit { color: var(--exit); }
+  .glyph { width: 14px; text-align: center; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="header">
+      <div class="name">Plip</div>
+      <button class="pack" id="pack" type="button"><span id="packName">无音效</span><b class="chev">&#9650;&#9660;</b></button>
+    </div>
+    <div class="menu hidden" id="menu"></div>
+    <button class="alert hidden" id="permission" type="button"><span>打开辅助功能</span><span>↗</span></button>
+    <div class="volume">
+      <svg class="speaker" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2.2 6.2h2L7.4 3.4v9.2L4.2 9.8h-2z"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" d="M10 6.3a2.6 2.6 0 0 1 0 3.4M11.7 4.7a4.8 4.8 0 0 1 0 6.6"/></svg>
+      <input id="volume" type="range" min="0" max="100" value="80">
+      <div class="percent" id="percent">80</div>
+    </div>
+    <div class="row"><span>静音</span><span class="key">&#8997;&#8679;M</span><button class="switch" id="muted" type="button" role="switch" aria-checked="false"></button></div>
+    <div class="hair"></div>
+    <div class="row"><span>连击升调</span><button class="switch" id="combo" type="button" role="switch" aria-checked="true"></button></div>
+    <div class="row"><span>通话时静音</span><button class="switch" id="smart" type="button" role="switch" aria-checked="true"></button></div>
+    <div class="note hidden" id="suppress"></div>
+    <div class="row"><span>开机自启</span><button class="switch" id="login" type="button" role="switch" aria-checked="false"></button></div>
+    <div class="warn hidden" id="loginMessage"></div>
+    <button class="link hidden" id="loginOpen" type="button">打开登录项</button>
+    <div class="apps">
+      <div class="apps-head">这些应用在前台时静音<button class="plus" id="addApp" type="button">+</button></div>
+      <div id="apps"></div>
+    </div>
+    <button class="action" id="import" type="button"><span class="glyph">+</span><span>添加音效包</span></button>
+    <button class="action exit" id="quit" type="button"><span class="glyph">&#9211;</span><span>退出</span></button>
+  </div>
+<script>
+const $ = (id) => document.getElementById(id);
+const bridge = () => window.plip;
+function send(name, value) { bridge()[name](value); }
+function toggle(id, name) {
+  $(id).addEventListener("click", () => send(name, $(id).getAttribute("aria-checked") !== "true"));
+}
+$("volume").addEventListener("input", () => {
+  $("percent").textContent = $("volume").value;
+  send("setVolume", Number($("volume").value) / 100);
+});
+toggle("muted", "setMuted");
+toggle("combo", "setCombo");
+toggle("smart", "setSmartMute");
+toggle("login", "setLogin");
+$("pack").addEventListener("click", () => $("menu").classList.toggle("hidden"));
+$("permission").addEventListener("click", () => send("openAccessibility"));
+$("loginOpen").addEventListener("click", () => send("openLogin"));
+$("addApp").addEventListener("click", () => send("pickApp"));
+$("import").addEventListener("click", () => send("importPack"));
+$("quit").addEventListener("click", () => send("quit"));
+
+function render(state) {
+  $("packName").textContent = state.packName || "无音效";
+  $("volume").value = Math.round((state.volume || 0) * 100);
+  $("percent").textContent = $("volume").value;
+  for (const [id, on] of [["muted", state.muted], ["combo", state.combo], ["smart", state.smartMute], ["login", state.login]]) {
+    $(id).setAttribute("aria-checked", on ? "true" : "false");
+  }
+  $("permission").classList.toggle("hidden", state.accessibility !== false);
+  $("suppress").textContent = state.suppressReason || "";
+  $("suppress").classList.toggle("hidden", !state.suppressReason);
+  $("loginMessage").textContent = state.loginMessage || "";
+  $("loginMessage").classList.toggle("hidden", !state.loginMessage);
+  $("loginOpen").classList.toggle("hidden", !state.loginMessage);
+  const apps = $("apps");
+  apps.replaceChildren();
+  if (!state.apps || state.apps.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "未添加";
+    apps.append(empty);
+  } else {
+    for (const app of state.apps) {
+      const row = document.createElement("div");
+      row.className = "app";
+      const name = document.createElement("span");
+      name.textContent = app.name || app.id;
+      const remove = document.createElement("button");
+      remove.className = "x";
+      remove.type = "button";
+      remove.textContent = "×";
+      remove.addEventListener("click", () => send("removeApp", app.id));
+      row.append(name, remove);
+      apps.append(row);
+    }
+  }
+  const menu = $("menu");
+  menu.replaceChildren();
+  for (const pack of state.packs || []) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = pack.name;
+    button.setAttribute("aria-current", pack.id === state.packID ? "true" : "false");
+    button.addEventListener("click", () => {
+      menu.classList.add("hidden");
+      send("selectPack", pack.id);
+    });
+    menu.append(button);
+  }
+  requestAnimationFrame(() => {
+    const height = Math.ceil(document.querySelector(".panel").getBoundingClientRect().height);
+    if (bridge() && bridge().resize) bridge().resize(height);
+  });
+}
+window.plipRender = render;
+if (bridge() && bridge().ready) bridge().ready();
+</script>
+</body>
+</html>

@@ -37,6 +37,7 @@ fi
 mkdir -p "$STAGE/Plip.app/Contents/MacOS" "$STAGE/Plip.app/Contents/Resources"
 cp "$BIN" "$STAGE/Plip.app/Contents/MacOS/Plip"
 rsync -a --exclude '.DS_Store' --exclude '._*' Soundpacks "$STAGE/Plip.app/Contents/Resources/"
+	cp ui/panel.html "$STAGE/Plip.app/Contents/Resources/panel.html"
 cp Info.plist "$STAGE/Plip.app/Contents/"
 xattr -c "$STAGE/Plip.app/Contents/Info.plist"
 

@@ -68,6 +68,7 @@ jobs:
           unzip -q "$zip" -d "$root"
           test -f "$root/Plip/Plip.exe"
           test -f "$root/Plip/plip.ico"
+          test -f "$root/Plip/panel.html"
           test -f "$root/Plip/Soundpacks/real-mx-black/manifest.json"
       - uses: actions/upload-artifact@v4
         with:

@@ -20,6 +20,7 @@ mkdir -p "$ROOT/Plip/Soundpacks"
   GOOS=windows GOARCH=amd64 go build -ldflags "-H windowsgui -s -w" -o "$ROOT/Plip/Plip.exe" .
 )
 cp windows/plip.ico "$ROOT/Plip/plip.ico"
+	cp ui/panel.html "$ROOT/Plip/panel.html"
 cp -R Soundpacks/. "$ROOT/Plip/Soundpacks/"
 find "$ROOT/Plip" -name '.DS_Store' -delete
 find "$ROOT/Plip" -name '._*' -delete
