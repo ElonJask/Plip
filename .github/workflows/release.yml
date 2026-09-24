@@ -47,10 +47,38 @@ jobs:
           name: macos-${{ matrix.arch }}
           path: artifacts/Plip-v*-macos-${{ matrix.arch }}.zip
 
+  windows:
+    name: windows-x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: windows/go.mod
+      - name: Test and build
+        shell: bash
+        run: bash Scripts/make_windows.sh
+      - name: Check archive
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          zip="artifacts/Plip-v${version}-windows-x64.zip"
+          root="${RUNNER_TEMP}/plip-win"
+          rm -rf "$root"
+          unzip -q "$zip" -d "$root"
+          test -f "$root/Plip/Plip.exe"
+          test -f "$root/Plip/plip.ico"
+          test -f "$root/Plip/Soundpacks/real-mx-black/manifest.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: artifacts/Plip-v*-windows-x64.zip
+
   publish:
-    needs: macos
+    needs: [macos, windows]
     runs-on: macos-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: dist
@@ -58,13 +86,16 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           version="${GITHUB_REF_NAME#v}"
           test -f "dist/Plip-v${version}-macos-arm64.zip"
           test -f "dist/Plip-v${version}-macos-x86_64.zip"
+          test -f "dist/Plip-v${version}-windows-x64.zip"
           gh release create "$GITHUB_REF_NAME" \
             "dist/Plip-v${version}-macos-arm64.zip" \
             "dist/Plip-v${version}-macos-x86_64.zip" \
+            "dist/Plip-v${version}-windows-x64.zip" \
             --title "Plip ${version}" \
             --notes "$(cat <<EOF
           ## macOS
@@ -82,6 +113,8 @@ jobs:
 
           ## Windows
 
-          尚未提供。
+          - \`Plip-v${version}-windows-x64.zip\`：64 位
+
+          解压后运行 Plip.exe。图标在任务栏通知区域，左键或右键打开菜单。Alt+Shift+M 静音。
           EOF
           )"

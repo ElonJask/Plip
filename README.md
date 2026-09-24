@@ -14,8 +14,11 @@ macOS 菜单栏按键音效。无 Dock 图标，不拦截键盘输入。
 |---|---|
 | `Plip-vX.Y.Z-macos-arm64.zip` | Apple Silicon |
 | `Plip-vX.Y.Z-macos-x86_64.zip` | Intel |
+| `Plip-vX.Y.Z-windows-x64.zip` | Windows 64 位 |
 
-解压后将 `Plip.app` 移入「应用程序」。推送与 `VERSION` 一致的标签 `vX.Y.Z` 后，GitHub Actions 会分别编译这两个安装包并发布。Windows 安装包尚未提供。
+解压后将 `Plip.app` 移入「应用程序」。推送与 `VERSION` 一致的标签 `vX.Y.Z` 后，GitHub Actions 会分别编译这三个安装包并发布。
+
+Windows 解压后运行 `Plip/Plip.exe`。图标出现在任务栏通知区域，左键或右键打开菜单。`Alt+Shift+M` 静音。
 
 首次启动需要「辅助功能」权限，仅用于监听按键。当前安装包为临时签名。移入「应用程序」后执行：
 
@@ -37,7 +40,11 @@ bash Scripts/make_app.sh
 open "artifacts/Plip-macos-$(uname -m).app"
 ```
 
-打包只使用当前机器的架构。Apple Silicon 与 Intel 安装包由 GitHub Actions 分别在对应的 runner 上编译。
+macOS 打包只使用当前机器的架构。Apple Silicon、Intel 与 Windows 安装包由 GitHub Actions 分别在对应的 runner 上编译。Windows 包也可在本机交叉编译：
+
+```bash
+bash Scripts/make_windows.sh
+```
 
 仓库已包含音效包时，可跳过第一步。`make_app.sh` 依次执行测试、版本核对与签名，签名失败即停止。单独测试：
 
@@ -104,7 +111,7 @@ swift test --disable-sandbox
 
 ## 平台
 
-当前版本仅支持 macOS。Windows 尚未实现。
+macOS 需要 13 及以上。Windows 包为 64 位，解压后直接运行，没有安装程序。
 
 ## 许可
 

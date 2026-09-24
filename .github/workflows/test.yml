@@ -15,3 +15,8 @@ jobs:
         run: swift build -c release --disable-sandbox
       - name: Version matches Info.plist
         run: bash Scripts/check_version.sh
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: windows/go.mod
+      - name: Windows package tests
+        run: bash Scripts/make_windows.sh
