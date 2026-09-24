@@ -1,0 +1,44 @@
+{
+  "name": "冰雪脆响·水花 ASMR",
+  "version": "1.0.0",
+  "author": "minetest_game / Luanti (CC BY-SA 3.0)",
+  "engine_version": "1",
+  "rules": {
+    "pitch_jitter": 0.05,
+    "combo_enabled": false
+  },
+  "key_mappings": {
+    "default": {
+      "files": [
+        "ice_footstep_1.wav",
+        "ice_footstep_2.wav",
+        "ice_footstep_3.wav",
+        "snow_footstep_3.wav",
+        "snow_footstep_4.wav",
+        "snow_footstep_5.wav"
+      ],
+      "volume": 0.85
+    },
+    "space": {
+      "files": [
+        "water_footstep_1.wav",
+        "water_footstep_2.wav"
+      ],
+      "volume": 0.9
+    },
+    "return": {
+      "files": [
+        "ice_dug.wav"
+      ],
+      "volume": 0.9
+    },
+    "backspace": {
+      "files": [
+        "ice_dig_1.wav",
+        "ice_dig_2.wav",
+        "ice_dig_3.wav"
+      ],
+      "volume": 0.9
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "Minecraft 脚步·硬质方块",
+  "version": "1.0.0",
+  "author": "minetest_game / Luanti (CC BY-SA 3.0)",
+  "engine_version": "1",
+  "rules": {
+    "pitch_jitter": 0.05,
+    "combo_enabled": false
+  },
+  "key_mappings": {
+    "default": {
+      "files": [
+        "hard_footstep_1.wav",
+        "hard_footstep_2.wav",
+        "hard_footstep_3.wav",
+        "gravel_footstep_1.wav",
+        "gravel_footstep_2.wav",
+        "gravel_footstep_3.wav",
+        "metal_footstep_1.wav",
+        "metal_footstep_2.wav",
+        "glass_footstep.wav"
+      ],
+      "volume": 0.85
+    },
+    "space": {
+      "files": [
+        "place_node_hard_1.wav",
+        "place_node_hard_2.wav"
+      ],
+      "volume": 0.9
+    },
+    "return": {
+      "files": [
+        "dug_node_1.wav",
+        "dug_node_2.wav"
+      ],
+      "volume": 0.9
+    },
+    "backspace": {
+      "files": [
+        "dig_choppy_1.wav",
+        "dig_choppy_2.wav",
+        "dug_metal_1.wav"
+      ],
+      "volume": 0.9
+    }
+  }
+}

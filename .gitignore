@@ -1,0 +1,7 @@
+.build/
+.cache/
+.workbuddy/
+.DS_Store
+._*
+*.xcuserstate
+artifacts/

@@ -1,0 +1,40 @@
+{
+  "name": "Cherry MX 黑轴·真实录音",
+  "version": "1.0.0",
+  "author": "kbsim (MIT) — Thomas Lai",
+  "engine_version": "1",
+  "rules": {
+    "pitch_jitter": 0.015,
+    "combo_enabled": false
+  },
+  "key_mappings": {
+    "default": {
+      "files": [
+        "key_1.wav",
+        "key_2.wav",
+        "key_3.wav",
+        "key_4.wav",
+        "key_5.wav"
+      ],
+      "volume": 0.85
+    },
+    "space": {
+      "files": [
+        "space.wav"
+      ],
+      "volume": 0.9
+    },
+    "return": {
+      "files": [
+        "enter.wav"
+      ],
+      "volume": 0.9
+    },
+    "backspace": {
+      "files": [
+        "backspace.wav"
+      ],
+      "volume": 0.9
+    }
+  }
+}

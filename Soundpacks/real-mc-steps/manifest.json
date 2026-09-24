@@ -1,0 +1,50 @@
+{
+  "name": "Minecraft 脚步·柔和地表",
+  "version": "1.0.0",
+  "author": "minetest_game / Luanti (CC BY-SA 3.0)",
+  "engine_version": "1",
+  "rules": {
+    "pitch_jitter": 0.05,
+    "combo_enabled": false
+  },
+  "key_mappings": {
+    "default": {
+      "files": [
+        "grass_footstep_1.wav",
+        "grass_footstep_2.wav",
+        "grass_footstep_3.wav",
+        "dirt_footstep_1.wav",
+        "dirt_footstep_2.wav",
+        "wood_footstep_1.wav",
+        "wood_footstep_2.wav",
+        "sand_footstep_1.wav",
+        "sand_footstep_2.wav",
+        "sand_footstep_3.wav",
+        "snow_footstep_1.wav",
+        "snow_footstep_2.wav"
+      ],
+      "volume": 0.85
+    },
+    "space": {
+      "files": [
+        "place_node_1.wav",
+        "place_node_2.wav"
+      ],
+      "volume": 0.9
+    },
+    "return": {
+      "files": [
+        "dug_node_1.wav",
+        "dug_node_2.wav"
+      ],
+      "volume": 0.9
+    },
+    "backspace": {
+      "files": [
+        "dig_crumbly.wav",
+        "gravel_dig_1.wav"
+      ],
+      "volume": 0.9
+    }
+  }
+}
