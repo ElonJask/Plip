@@ -40,10 +40,10 @@ bash Scripts/make_app.sh
 open "artifacts/Plip-macos-$(uname -m).app"
 ```
 
-macOS 打包只使用当前机器的架构。Apple Silicon、Intel 与 Windows 安装包由 GitHub Actions 分别在对应的 runner 上编译。Windows 包也可在本机交叉编译：
+Apple Silicon、Intel 与 Windows 安装包由 GitHub Actions 用 Electron 分别打包。本机打包：
 
 ```bash
-bash Scripts/make_windows.sh
+bash Scripts/make_electron.sh
 ```
 
 仓库已包含音效包时，可跳过第一步。`make_app.sh` 依次执行测试、版本核对与签名，签名失败即停止。单独测试：

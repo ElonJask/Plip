@@ -23,7 +23,9 @@
     user-select: none;
   }
   .panel {
-    width: 268px;
+    width: max-content;
+    min-width: 268px;
+    max-width: 420px;
     background: #fff;
     border: 1px solid var(--line);
     border-radius: 14px;
@@ -40,7 +42,7 @@
   .name { font-size: 13px; font-weight: 600; }
   .pack {
     margin-left: auto;
-    max-width: 168px;
+    max-width: none;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -52,7 +54,7 @@
     font: 500 12px/1.2 -apple-system, "Segoe UI", sans-serif;
     cursor: pointer;
   }
-  .pack span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pack span { white-space: nowrap; }
   .chev { font-size: 8px; }
   .menu {
     position: absolute;
@@ -176,7 +178,8 @@ $("import").addEventListener("click", () => send("importPack"));
 $("quit").addEventListener("click", () => send("quit"));
 
 function render(state) {
-  $("packName").textContent = state.packName || "无音效";
+  document.title = "Plip";
+  $("packName").textContent = (state && state.packName) || "无音效";
   $("volume").value = Math.round((state.volume || 0) * 100);
   $("percent").textContent = $("volume").value;
   for (const [id, on] of [["muted", state.muted], ["combo", state.combo], ["smart", state.smartMute], ["login", state.login]]) {
@@ -224,11 +227,12 @@ function render(state) {
     menu.append(button);
   }
   requestAnimationFrame(() => {
-    const height = Math.ceil(document.querySelector(".panel").getBoundingClientRect().height);
-    if (bridge() && bridge().resize) bridge().resize(height);
+    const box = document.querySelector(".panel").getBoundingClientRect();
+    if (bridge() && bridge().resize) bridge().resize({ width: Math.ceil(box.width), height: Math.ceil(box.height) });
   });
 }
 window.plipRender = render;
+if (window.__plipState) render(window.__plipState);
 if (bridge() && bridge().ready) bridge().ready();
 </script>
 </body>

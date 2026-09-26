@@ -9,14 +9,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Swift tests
-        run: swift test --disable-sandbox
-      - name: Release build
-        run: swift build -c release --disable-sandbox
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Version matches Info.plist
         run: bash Scripts/check_version.sh
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: windows/go.mod
-      - name: Windows package tests
-        run: bash Scripts/make_windows.sh
+      - name: Electron package
+        run: bash Scripts/make_electron.sh

@@ -9,74 +9,39 @@ permissions:
   contents: write
 
 jobs:
-  macos:
-    name: macos-${{ matrix.arch }}
+  package:
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - arch: arm64
+          - name: macos-arm64
             runner: macos-latest
-          - arch: x86_64
+          - name: macos-x86_64
             runner: macos-26-intel
-    env:
-      ARCH: ${{ matrix.arch }}
-      SKIP_TEST: "1"
+          - name: windows-x64
+            runner: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Tag matches version
+        shell: bash
         run: bash Scripts/check_version.sh
         env:
           RELEASE_TAG: ${{ github.ref_name }}
-      - name: Build archive
-        run: bash Scripts/make_app.sh
-      - name: Check archive
-        run: |
-          version="$(tr -d '[:space:]' < VERSION)"
-          zip="artifacts/Plip-v${version}-macos-${ARCH}.zip"
-          root="${RUNNER_TEMP}/plip-check"
-          rm -rf "$root"
-          ditto -x -k "$zip" "$root"
-          bin="$root/Plip.app/Contents/MacOS/Plip"
-          test -f "$bin"
-          test "$(lipo -archs "$bin")" = "$ARCH"
-          codesign --verify --deep --strict "$root/Plip.app"
+      - name: Package
+        shell: bash
+        run: bash Scripts/make_electron.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ matrix.arch }}
-          path: artifacts/Plip-v*-macos-${{ matrix.arch }}.zip
-
-  windows:
-    name: windows-x64
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: windows/go.mod
-      - name: Test and build
-        shell: bash
-        run: bash Scripts/make_windows.sh
-      - name: Check archive
-        shell: bash
-        run: |
-          version="$(tr -d '[:space:]' < VERSION)"
-          zip="artifacts/Plip-v${version}-windows-x64.zip"
-          root="${RUNNER_TEMP}/plip-win"
-          rm -rf "$root"
-          unzip -q "$zip" -d "$root"
-          test -f "$root/Plip/Plip.exe"
-          test -f "$root/Plip/plip.ico"
-          test -f "$root/Plip/panel.html"
-          test -f "$root/Plip/Soundpacks/real-mx-black/manifest.json"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-x64
-          path: artifacts/Plip-v*-windows-x64.zip
+          name: ${{ matrix.name }}
+          path: artifacts/Plip-v*.zip
 
   publish:
-    needs: [macos, windows]
+    needs: package
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -110,12 +75,12 @@ jobs:
           xattr -dr com.apple.quarantine /Applications/Plip.app
           \`\`\`
 
-          安装包为临时签名。临时签名不能登记开机自启，需要 Developer ID 签名，并且应用位于 /Applications/Plip.app。
+          首次打开若提示辅助功能，请到「系统设置 → 隐私与安全性 → 辅助功能」允许 Plip。
 
           ## Windows
 
           - \`Plip-v${version}-windows-x64.zip\`：64 位
 
-          解压后运行 Plip.exe。图标在任务栏通知区域，左键或右键打开菜单。Alt+Shift+M 静音。
+          解压后运行 Plip.exe。图标在任务栏通知区域，点击打开面板。Alt+Shift+M 静音。
           EOF
           )"

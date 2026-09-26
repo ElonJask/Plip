@@ -7,3 +7,5 @@ __pycache__/
 ._*
 *.xcuserstate
 artifacts/
+electron/node_modules/
+electron/dist/

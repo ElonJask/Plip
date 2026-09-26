@@ -1,0 +1,37 @@
+{
+  "name": "plip",
+  "productName": "Plip",
+  "version": "1.0.1",
+  "private": true,
+  "description": "菜单栏按键声",
+  "author": "Plip",
+  "main": "main.js",
+  "build": {
+    "appId": "app.plip.mac",
+    "files": [
+      "main.js",
+      "preload.js",
+      { "from": "../ui", "to": "ui", "filter": ["*.html"] }
+    ],
+    "extraResources": [
+      { "from": "../Soundpacks", "to": "Soundpacks" },
+      { "from": "trayTemplate.png", "to": "trayTemplate.png" }
+    ],
+    "mac": {
+      "category": "public.app-category.music",
+      "identity": null,
+      "target": ["zip"],
+      "artifactName": "Plip-v${version}-macos-${arch}.${ext}"
+    },
+    "win": {
+      "target": [{ "target": "zip", "arch": ["x64"] }],
+      "artifactName": "Plip-v${version}-windows-x64.${ext}"
+    }
+  },
+  "dependencies": {
+    "uiohook-napi": "1.5.5"
+  },
+  "devDependencies": {
+    "electron": "33.4.11"
+  }
+}
