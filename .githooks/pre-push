@@ -1,0 +1,2 @@
+#!/bin/bash
+exec bash "$(git rev-parse --show-toplevel)/Scripts/check.sh"

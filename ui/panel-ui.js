@@ -147,6 +147,8 @@
       setSwitch("smart", !!next.smartMute);
       setSwitch("login", !!next.login);
       $("permission").classList.toggle("hidden", next.accessibility !== false);
+      const version = $("version");
+      if (version && next.version) version.textContent = "v" + next.version;
       const status = statusText(next);
       $("status").textContent = status.text;
       $("statusLine").classList.toggle("off", status.off);

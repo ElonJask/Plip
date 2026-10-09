@@ -8,6 +8,7 @@ VERSION="$(tr -d '[:space:]' < VERSION)"
 export PYTHON="${PYTHON:-/usr/bin/python3}"
 cd electron
 npm ci
+npm test
 mkdir -p ../artifacts
 if [[ "$(uname -s)" == "Darwin" ]]; then
   case "$(uname -m)" in

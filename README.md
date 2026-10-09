@@ -26,7 +26,8 @@ xattr -dr com.apple.quarantine /Applications/Plip.app
 
 ## 使用
 
-- 面板：切换音效包、调节音量、静音、连击升调、开机自启、添加音效包。
+- 左键点击图标打开面板：切换音效包、调节音量、静音、连击升调、开机自启、添加音效包。右键点击图标弹出快捷菜单。
+- 只允许运行一个实例，重复启动会直接打开已运行实例的面板。
 - 静音快捷键：macOS `⌥⇧M`，Windows `Alt+Shift+M`。
 - 通话时静音（仅 macOS）：Zoom、FaceTime、腾讯会议、Teams、Webex、钉钉、飞书位于前台时暂停按键声。
 
@@ -38,13 +39,25 @@ xattr -dr com.apple.quarantine /Applications/Plip.app
 cd electron
 npm ci
 npx electron .        # 直接运行
-npm test              # 单元测试
+```
+
+提交或推送前运行本地检查（版本核对、语法检查、单元测试）。仓库不依赖 GitHub 上的测试流水线，运行下面的命令启用推送前自动检查：
+
+```bash
+bash Scripts/check.sh           # 手动检查
+bash Scripts/install_hooks.sh   # 启用 pre-push 钩子
 ```
 
 打包当前系统（macOS 只打本机架构，Windows 在 Windows 上打），产物在 `artifacts/`：
 
 ```bash
 bash Scripts/make_electron.sh
+```
+
+图标由脚本生成，输出到 `electron/build/`（应用图标 `.icns`、`.ico`、`.png` 与托盘图标）。修改图形后重新生成：
+
+```bash
+python3 Scripts/make_icons.py   # 需要 Pillow；.icns 需在 macOS 上生成
 ```
 
 补充或更新开源音效素材：
@@ -60,7 +73,8 @@ python3 Scripts/fetch_open_packs.py
 | `electron/` | 主进程、预加载脚本与单元测试 |
 | `ui/` | 面板（`panel.html`、`panel-ui.js`）与隐藏播放窗口（`player.html`、`player-engine.js`） |
 | `Soundpacks/` | 内置音效包，署名见 `CREDITS.md` |
-| `Scripts/` | 打包、版本核对、素材获取 |
+| `electron/build/` | 应用与托盘图标 |
+| `Scripts/` | 本地检查、打包、版本核对、图标生成、素材获取 |
 
 ## 发布
 

@@ -3,8 +3,8 @@
   "productName": "Plip",
   "version": "1.0.1",
   "private": true,
-  "description": "菜单栏按键声",
-  "author": "Plip",
+  "description": "键盘按键声，常驻菜单栏与通知区域",
+  "author": "怜花辞客",
   "main": "main.js",
   "scripts": {
     "test": "node run-tests.js"
@@ -34,19 +34,29 @@
         "to": "Soundpacks"
       },
       {
-        "from": "trayTemplate.png",
-        "to": "trayTemplate.png"
+        "from": "build",
+        "to": "tray",
+        "filter": [
+          "tray*.png"
+        ]
       }
     ],
     "mac": {
       "category": "public.app-category.music",
+      "icon": "build/icon.icns",
       "identity": null,
+      "minimumSystemVersion": "13.0",
+      "extendInfo": {
+        "LSUIElement": true,
+        "NSHumanReadableCopyright": "Copyright © 2026 怜花辞客"
+      },
       "target": [
         "zip"
       ],
       "artifactName": "Plip-v${version}-macos-${arch}.${ext}"
     },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "zip",
@@ -56,6 +66,10 @@
         }
       ],
       "artifactName": "Plip-v${version}-windows-x64.${ext}"
+    },
+    "copyright": "Copyright © 2026 怜花辞客",
+    "directories": {
+      "buildResources": "build"
     }
   },
   "dependencies": {
@@ -64,5 +78,6 @@
   "devDependencies": {
     "electron": "33.4.11",
     "electron-builder": "25.1.8"
-  }
+  },
+  "license": "MIT"
 }

@@ -103,6 +103,8 @@
   .status.off::before { background: var(--faint); }
   .status span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+  .version { margin-left: auto; align-self: flex-start; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+
   /* 权限提示 */
   .alert {
     width: 100%;
@@ -311,6 +313,7 @@
         <div class="name">Plip</div>
         <div class="status" id="statusLine"><span id="status">正在监听按键</span></div>
       </div>
+      <div class="version" id="version"></div>
     </header>
 
     <button class="alert hidden" id="permission" type="button">

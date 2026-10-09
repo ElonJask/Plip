@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, nativeImage, nativeTheme, ipcMain, shell, dialog, systemPreferences } = require("electron");
+const { app, BrowserWindow, Tray, nativeImage, nativeTheme, Menu, screen, ipcMain, shell, dialog, systemPreferences } = require("electron");
 const { uIOhook, UiohookKey } = require("uiohook-napi");
 const { execFile } = require("child_process");
 const fs = require("fs");
@@ -13,6 +13,15 @@ app.commandLine.appendSwitch("disable-background-timer-throttling");
 app.commandLine.appendSwitch("disable-background-media-suspend");
 app.commandLine.appendSwitch("disable-features", "CalculateNativeWinOcclusion");
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
+
+const APP_ID = "app.plip.mac";
+if (process.platform === "win32") app.setAppUserModelId(APP_ID);
+
+// 只允许一个实例，重复启动时直接打开已运行实例的面板。
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+}
 
 const stateFile = () => path.join(app.getPath("userData"), "state.json");
 const userPacksDir = () => path.join(app.getPath("userData"), "Soundpacks");
@@ -78,6 +87,40 @@ function bundledPacks() {
   return candidates.find((dir) => fs.existsSync(dir)) || candidates[0];
 }
 
+function trayImage() {
+  const name = process.platform === "darwin" ? "trayTemplate.png" : "tray.png";
+  const candidates = [
+    path.join(process.resourcesPath || "", "tray", name),
+    path.join(__dirname, "build", name)
+  ];
+  const file = candidates.find((candidate) => fs.existsSync(candidate));
+  const image = file ? nativeImage.createFromPath(file) : nativeImage.createEmpty();
+  if (process.platform === "darwin") image.setTemplateImage(true);
+  return image;
+}
+
+function trayTooltip() {
+  if (state.muted) return "Plip · 已静音";
+  if (suppressReason) return "Plip · " + suppressReason;
+  return "Plip";
+}
+
+function trayMenu() {
+  return Menu.buildFromTemplate([
+    { label: "打开 Plip", click: () => showPanel() },
+    {
+      label: state.muted ? "取消静音" : "静音",
+      click: () => {
+        state.muted = !state.muted;
+        saveState();
+        publish();
+      }
+    },
+    { type: "separator" },
+    { label: "退出 Plip", click: () => app.quit() }
+  ]);
+}
+
 function uiFile(name) {
   const packed = path.join(__dirname, "ui", name);
   if (fs.existsSync(packed)) return packed;
@@ -112,6 +155,7 @@ function snapshot() {
   });
   suppressReason = mute.reason;
   return {
+    version: app.getVersion(),
     packName: current ? current.name : "无音效",
     packID: current ? current.id : "",
     packs: packs.map((pack) => ({ id: pack.id, name: pack.name })),
@@ -135,6 +179,7 @@ function publish(force) {
   if (!force && encoded === lastPublished) return;
   lastPublished = encoded;
   panel.webContents.send("state", next);
+  if (tray && !tray.isDestroyed()) tray.setToolTip(trayTooltip());
 }
 
 function openAccessibility() {
@@ -316,25 +361,37 @@ function createPlayer() {
   });
 }
 
-function togglePanel() {
-  if (!panel) createPanel();
-  if (panel.isVisible()) {
-    panel.hide();
-    return;
-  }
+function placePanel() {
   const bounds = tray.getBounds();
-  const size = panel.getSize();
-  const display = require("electron").screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y }).workArea;
-  let x = Math.round(bounds.x + bounds.width / 2 - size[0] / 2);
-  let y = Math.round(bounds.y + bounds.height + 6);
-  x = Math.min(Math.max(x, display.x), display.x + display.width - size[0]);
-  y = Math.min(Math.max(y, display.y), display.y + display.height - size[1]);
+  const [width, height] = panel.getSize();
+  const display = screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y }).workArea;
+  let x = Math.round(bounds.x + bounds.width / 2 - width / 2);
+  // 任务栏在屏幕下方时（Windows），面板出现在图标上方；菜单栏在上方时出现在下方。
+  const trayInLowerHalf = bounds.y > display.y + display.height / 2;
+  let y = trayInLowerHalf
+    ? Math.round(bounds.y - height - 6)
+    : Math.round(bounds.y + bounds.height + 6);
+  x = Math.min(Math.max(x, display.x + 8), display.x + display.width - width - 8);
+  y = Math.min(Math.max(y, display.y + 8), display.y + display.height - height - 8);
   panel.setPosition(x, y);
-  publish();
+}
+
+function showPanel() {
+  if (!panel || panel.isDestroyed()) createPanel();
+  placePanel();
+  publish(true);
   holdingPanel = true;
   panel.show();
   panel.focus();
   setTimeout(() => { holdingPanel = false; }, 250);
+}
+
+function togglePanel() {
+  if (panel && !panel.isDestroyed() && panel.isVisible()) {
+    panel.hide();
+    return;
+  }
+  showPanel();
 }
 
 const keyNames = {
@@ -402,27 +459,32 @@ function asBool(value) {
   return value === true || value === "true" || value === 1 || value === "1";
 }
 
-app.whenReady().then(() => {
+if (gotLock) app.whenReady().then(() => {
   loadState();
   applyLogin(asBool(state.login));
   saveState();
   fs.mkdirSync(userPacksDir(), { recursive: true });
   readPacks();
-  const iconPath = path.join(process.resourcesPath, "trayTemplate.png");
-  const icon = nativeImage.createFromPath(iconPath).resize({ width: 22, height: 22 });
-  icon.setTemplateImage(true);
-  tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
-  tray.setTitle("Plip");
-  tray.setToolTip("Plip");
+  tray = new Tray(trayImage());
+  tray.setToolTip(trayTooltip());
   if (process.platform === "darwin") app.dock.hide();
   tray.on("click", togglePanel);
-  tray.on("right-click", togglePanel);
+  tray.on("right-click", () => tray.popUpContextMenu(trayMenu()));
   createPanel();
   createPlayer();
 
   listen();
   refreshFrontApp();
   setInterval(() => refreshFrontApp(() => publish()), 2000);
+
+  // 首次运行缺少辅助功能权限时，直接打开面板引导授权。
+  if (process.platform === "darwin" && !systemPreferences.isTrustedAccessibilityClient(false)) {
+    setTimeout(showPanel, 600);
+  }
+});
+
+app.on("second-instance", () => {
+  if (app.isReady()) showPanel();
 });
 
 ipcMain.handle("ready", () => snapshot());
