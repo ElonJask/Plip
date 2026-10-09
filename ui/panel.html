@@ -403,9 +403,10 @@
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") ui.escape();
   });
-  window.plipRender = (state) => ui.render(state);
-  if (window.__plipState) ui.render(window.__plipState);
-  if (window.plip && window.plip.ready) window.plip.ready();
+  if (window.plip) {
+    window.plip.onState((state) => ui.render(state));
+    window.plip.ready().then((state) => ui.render(state));
+  }
 </script>
 </body>
 </html>

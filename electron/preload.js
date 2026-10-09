@@ -1,12 +1,12 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-function show(state) {
-  window.__plipState = state;
-  if (window.plipRender) window.plipRender(state);
-}
-
+// 预加载脚本运行在隔离环境，不能直接调用页面里的函数。
+// 状态通过 onState 订阅交给页面，页面自己负责渲染。
 contextBridge.exposeInMainWorld("plip", {
-  ready: () => ipcRenderer.invoke("ready").then(show),
+  ready: () => ipcRenderer.invoke("ready"),
+  onState: (callback) => {
+    ipcRenderer.on("state", (_event, state) => callback(state));
+  },
   resize: (size) => ipcRenderer.send("resize", size),
   setVolume: (value) => ipcRenderer.send("setVolume", value),
   setMuted: (value) => ipcRenderer.send("setMuted", value),
@@ -20,5 +20,3 @@ contextBridge.exposeInMainWorld("plip", {
   hide: () => ipcRenderer.send("hide"),
   quit: () => ipcRenderer.send("quit")
 });
-
-ipcRenderer.on("state", (_event, state) => show(state));

@@ -275,7 +275,6 @@ function createPanel() {
   panel.loadFile(uiFile("panel.html"));
   panel.webContents.on("did-finish-load", () => {
     publish(true);
-    panel.webContents.executeJavaScript("plipRender(" + JSON.stringify(snapshot()) + ")");
   });
   nativeTheme.on("updated", () => {
     if (panel && !panel.isDestroyed()) panel.setBackgroundColor(panelBackground());
