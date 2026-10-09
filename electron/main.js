@@ -173,12 +173,17 @@ function snapshot() {
 let lastPublished = "";
 
 function publish(force) {
-  if (!panel || panel.isDestroyed()) return;
+  if (!panel || panel.isDestroyed() || panel.webContents.isDestroyed()) return;
   const next = snapshot();
   const encoded = JSON.stringify(next);
   if (!force && encoded === lastPublished) return;
-  lastPublished = encoded;
-  panel.webContents.send("state", next);
+  try {
+    panel.webContents.send("state", next);
+    lastPublished = encoded;
+  } catch {
+    // 渲染进程尚未就绪或已被回收；下次发布会重试。
+    lastPublished = "";
+  }
   if (tray && !tray.isDestroyed()) tray.setToolTip(trayTooltip());
 }
 
@@ -274,6 +279,12 @@ function createPanel() {
   });
   nativeTheme.on("updated", () => {
     if (panel && !panel.isDestroyed()) panel.setBackgroundColor(panelBackground());
+  });
+  panel.webContents.on("render-process-gone", () => {
+    if (quitting || !panel || panel.isDestroyed()) return;
+    lastPublished = "";
+    panel.destroy();
+    panel = null;
   });
   panel.on("blur", () => {
     if (holdingPanel) return;
