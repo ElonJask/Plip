@@ -6,15 +6,28 @@ on:
 
 jobs:
   test:
-    runs-on: macos-latest
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Version matches Info.plist
+          cache: npm
+          cache-dependency-path: electron/package-lock.json
+      - name: Version
+        shell: bash
         run: bash Scripts/check_version.sh
-      - name: Player engine
-        run: node electron/player-engine.test.js && node electron/pack-path.test.js && node electron/panel-ui.test.js && node electron/pack-import.test.js && node electron/mute-policy.test.js
-      - name: Electron package
+      - name: Install
+        working-directory: electron
+        run: npm ci
+      - name: Unit tests
+        working-directory: electron
+        run: npm test
+      - name: Package
+        shell: bash
         run: bash Scripts/make_electron.sh

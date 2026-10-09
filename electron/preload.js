@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld("plip", {
   openAccessibility: () => ipcRenderer.send("openAccessibility"),
   openLogin: () => ipcRenderer.send("openLogin"),
   importPack: () => ipcRenderer.send("importPack"),
+  hide: () => ipcRenderer.send("hide"),
   quit: () => ipcRenderer.send("quit")
 });
 

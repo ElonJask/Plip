@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, nativeImage, ipcMain, shell, dialog, systemPreferences } = require("electron");
+const { app, BrowserWindow, Tray, nativeImage, nativeTheme, ipcMain, shell, dialog, systemPreferences } = require("electron");
 const { uIOhook, UiohookKey } = require("uiohook-napi");
 const { execFile } = require("child_process");
 const fs = require("fs");
@@ -17,6 +17,11 @@ app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 const stateFile = () => path.join(app.getPath("userData"), "state.json");
 const userPacksDir = () => path.join(app.getPath("userData"), "Soundpacks");
 const MAX_PENDING_PLAYS = 48;
+const PANEL_WIDTH = 300;
+
+function panelBackground() {
+  return nativeTheme.shouldUseDarkColors ? "#1c1c1e" : "#f4f4f6";
+}
 
 let tray;
 let panel;
@@ -203,12 +208,12 @@ function flushPendingPlays() {
 
 function createPanel() {
   panel = new BrowserWindow({
-    width: 320,
-    height: 360,
+    width: PANEL_WIDTH,
+    height: 420,
     show: false,
     frame: false,
     transparent: false,
-    backgroundColor: "#ffffff",
+    backgroundColor: panelBackground(),
     resizable: false,
     skipTaskbar: true,
     alwaysOnTop: true,
@@ -221,6 +226,9 @@ function createPanel() {
   panel.webContents.on("did-finish-load", () => {
     publish(true);
     panel.webContents.executeJavaScript("plipRender(" + JSON.stringify(snapshot()) + ")");
+  });
+  nativeTheme.on("updated", () => {
+    if (panel && !panel.isDestroyed()) panel.setBackgroundColor(panelBackground());
   });
   panel.on("blur", () => {
     if (holdingPanel) return;
@@ -433,7 +441,7 @@ ipcMain.handle("readSound", async (_event, file) => {
   }
 });
 ipcMain.on("resize", (_event, size) => {
-  if (panel) panel.setContentSize(Math.max(268, size.width), Math.max(160, size.height));
+  if (panel) panel.setContentSize(PANEL_WIDTH, Math.max(160, Math.min(size.height, 640)));
 });
 ipcMain.on("setVolume", (_event, value) => {
   state.volume = Math.max(0, Math.min(1, Number(value) || 0));
@@ -467,7 +475,13 @@ ipcMain.on("selectPack", (_event, id) => {
   loadCurrentPackIntoPlayer();
 });
 ipcMain.on("openAccessibility", openAccessibility);
-ipcMain.on("openLogin", () => shell.openExternal("x-apple.systempreferences:com.apple.LoginItems-Settings.extension"));
+ipcMain.on("openLogin", () => {
+  if (process.platform !== "darwin") return;
+  shell.openExternal("x-apple.systempreferences:com.apple.LoginItems-Settings.extension");
+});
+ipcMain.on("hide", () => {
+  if (panel && !panel.isDestroyed()) panel.hide();
+});
 ipcMain.on("importPack", async () => {
   const result = await withPanelHeld(() => dialog.showOpenDialog({
     title: "添加音效包",

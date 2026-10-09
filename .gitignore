@@ -1,11 +1,10 @@
-.build/
+
 __pycache__/
 *.pyc
 .cache/
 .workbuddy/
 .DS_Store
 ._*
-*.xcuserstate
 artifacts/
 electron/node_modules/
 electron/dist/

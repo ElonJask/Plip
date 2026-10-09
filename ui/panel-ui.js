@@ -52,9 +52,37 @@
       return null;
     }
 
+    function syncMenu() {
+      $("menu").classList.toggle("hidden", !menuOpen);
+      $("pack").setAttribute("aria-expanded", menuOpen ? "true" : "false");
+    }
+
     function closeMenu() {
       menuOpen = false;
-      $("menu").classList.add("hidden");
+      syncMenu();
+    }
+
+    function setFill(percent) {
+      const el = $("volume");
+      if (el.style && el.style.setProperty) el.style.setProperty("--pct", percent + "%");
+    }
+
+    function statusText(state) {
+      if (state.muted) return { text: "已静音", off: true };
+      if (state.suppressReason) return { text: state.suppressReason + "，已暂停", off: true };
+      if (state.accessibility === false) return { text: "未获得监听权限", off: true };
+      return { text: "正在监听按键", off: false };
+    }
+
+    function escape() {
+      if (menuOpen) closeMenu();
+      else send("hide");
+    }
+
+    function outsideClick(target) {
+      if (!menuOpen) return;
+      if (closest(target, ".anchor")) return;
+      closeMenu();
     }
 
     function renderMenu(state) {
@@ -65,16 +93,18 @@
         button.type = "button";
         button.dataset.id = pack.id;
         button.textContent = pack.name;
+        button.setAttribute("role", "option");
         button.setAttribute("aria-current", pack.id === state.packID ? "true" : "false");
         menu.append(button);
       }
-      menu.classList.toggle("hidden", !menuOpen);
+      syncMenu();
     }
 
     function bind() {
       $("volume").addEventListener("pointerdown", () => { draggingVolume = true; });
       $("volume").addEventListener("input", () => {
         $("percent").textContent = $("volume").value;
+        setFill($("volume").value);
         if (current) current.volume = Number($("volume").value) / 100;
         send("setVolume", Number($("volume").value) / 100);
       });
@@ -85,7 +115,7 @@
       $("login").addEventListener("click", () => toggleSwitch("login", "login", "setLogin"));
       $("pack").addEventListener("click", () => {
         menuOpen = !menuOpen;
-        $("menu").classList.toggle("hidden", !menuOpen);
+        syncMenu();
       });
       $("permission").addEventListener("click", () => send("openAccessibility"));
       $("loginOpen").addEventListener("click", () => send("openLogin"));
@@ -110,26 +140,27 @@
       if (!draggingVolume) {
         $("volume").value = String(Math.round((next.volume || 0) * 100));
         $("percent").textContent = $("volume").value;
+        setFill($("volume").value);
       }
       setSwitch("muted", !!next.muted);
       setSwitch("combo", !!next.combo);
       setSwitch("smart", !!next.smartMute);
       setSwitch("login", !!next.login);
       $("permission").classList.toggle("hidden", next.accessibility !== false);
-      $("suppress").textContent = next.suppressReason || "";
-      $("suppress").classList.toggle("hidden", !next.suppressReason);
+      const status = statusText(next);
+      $("status").textContent = status.text;
+      $("statusLine").classList.toggle("off", status.off);
       $("loginMessage").textContent = next.loginMessage || "";
-      $("loginMessage").classList.toggle("hidden", !next.loginMessage);
-      $("loginOpen").classList.toggle("hidden", !next.loginMessage);
+      $("loginExtra").classList.toggle("hidden", !next.loginMessage);
       if (packsChanged) renderMenu(next);
-      else $("menu").classList.toggle("hidden", !menuOpen);
+      else syncMenu();
       if (opts.onResize) {
         const box = opts.measure ? opts.measure() : null;
         if (box) opts.onResize(box);
       }
     }
 
-    return { bind, render, toggleSwitch, setSwitch, switchOn, sameList };
+    return { bind, render, escape, outsideClick, toggleSwitch, setSwitch, switchOn, sameList };
   }
 
   return { create, sameList };

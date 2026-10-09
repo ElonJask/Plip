@@ -1,10 +1,8 @@
 # Plip
 
-macOS 菜单栏按键音效。无 Dock 图标，不拦截键盘输入。
+菜单栏 / 通知区域按键音效。无 Dock 图标，只监听按键，不拦截输入。
 
-机械轴、方块脚步与冰雪音效均为开源录音。音频在加载时解码进内存，按键时直接播放。
-
-系统要求：macOS 13 及以上。
+机械轴、方块脚步与冰雪音效均为开源录音，启动时解码进内存，按键时直接播放。
 
 ## 安装
 
@@ -12,45 +10,67 @@ macOS 菜单栏按键音效。无 Dock 图标，不拦截键盘输入。
 
 | 文件 | 系统 |
 |---|---|
-| `Plip-vX.Y.Z-macos-arm64.zip` | Apple Silicon |
-| `Plip-vX.Y.Z-macos-x86_64.zip` | Intel |
+| `Plip-vX.Y.Z-macos-arm64.zip` | macOS 13+，Apple Silicon |
+| `Plip-vX.Y.Z-macos-x86_64.zip` | macOS 13+，Intel |
 | `Plip-vX.Y.Z-windows-x64.zip` | Windows 64 位 |
 
-解压后将 `Plip.app` 移入「应用程序」。推送与 `VERSION` 一致的标签 `vX.Y.Z` 后，GitHub Actions 会分别编译这三个安装包并发布。
-
-Windows 解压后运行 `Plip/Plip.exe`。图标出现在任务栏通知区域，左键或右键打开菜单。`Alt+Shift+M` 静音。
-
-首次启动需要「辅助功能」权限，仅用于监听按键。当前安装包为临时签名。移入「应用程序」后执行：
+**macOS**：解压后将 `Plip.app` 移入「应用程序」，执行下面的命令移除下载隔离标记，再打开：
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Plip.app
 ```
 
-该命令移除下载隔离标记，用于跳过「无法验证开发者」的拦截。开机自启使用系统登录项，需要 Developer ID 签名，且应用必须位于 `/Applications/Plip.app`。当前安装包是临时签名，勾选后面板会显示系统拒绝的原因。
+首次启动需要「辅助功能」权限（系统设置 → 隐私与安全性 → 辅助功能），仅用于监听按键。当前安装包未做 Developer ID 签名，因此系统可能拒绝登记「开机自启」，面板会显示原因并提供登录项入口。
 
-面板提供音效包、音量与静音。静音快捷键为 ⌥⇧M。
+**Windows**：解压后运行 `Plip.exe`，没有安装程序。图标位于任务栏通知区域，点击打开面板。
 
-开机自启若被系统要求确认，面板会显示原因并提供「登录项」入口。
+## 使用
 
-## 构建
+- 面板：切换音效包、调节音量、静音、连击升调、开机自启、添加音效包。
+- 静音快捷键：macOS `⌥⇧M`，Windows `Alt+Shift+M`。
+- 通话时静音（仅 macOS）：Zoom、FaceTime、腾讯会议、Teams、Webex、钉钉、飞书位于前台时暂停按键声。
+
+## 开发
+
+需要 Node.js 20+。
 
 ```bash
-python3 Scripts/fetch_open_packs.py
-bash Scripts/make_app.sh
-open "artifacts/Plip-macos-$(uname -m).app"
+cd electron
+npm ci
+npx electron .        # 直接运行
+npm test              # 单元测试
 ```
 
-Apple Silicon、Intel 与 Windows 安装包由 GitHub Actions 用 Electron 分别打包。本机打包：
+打包当前系统（macOS 只打本机架构，Windows 在 Windows 上打），产物在 `artifacts/`：
 
 ```bash
 bash Scripts/make_electron.sh
 ```
 
-仓库已包含音效包时，可跳过第一步。`make_app.sh` 依次执行测试、版本核对与签名，签名失败即停止。单独测试：
+补充或更新开源音效素材：
 
 ```bash
-swift test --disable-sandbox
+python3 Scripts/fetch_open_packs.py
 ```
+
+目录结构：
+
+| 路径 | 作用 |
+|---|---|
+| `electron/` | 主进程、预加载脚本与单元测试 |
+| `ui/` | 面板（`panel.html`、`panel-ui.js`）与隐藏播放窗口（`player.html`、`player-engine.js`） |
+| `Soundpacks/` | 内置音效包，署名见 `CREDITS.md` |
+| `Scripts/` | 打包、版本核对、素材获取 |
+
+## 发布
+
+`VERSION` 是版本的唯一来源，`electron/package.json` 的 `version` 必须与之一致，`Scripts/check_version.sh` 负责核对。更新两处版本后推送同版本标签：
+
+```bash
+git tag vX.Y.Z && git push origin vX.Y.Z
+```
+
+GitHub Actions 会分别在 Apple Silicon、Intel 和 Windows runner 上打包，并创建 Release。
 
 ## 音效包
 
@@ -76,7 +96,7 @@ swift test --disable-sandbox
 
 面板中的「添加音效包」可选择一个或多个音频文件，或一个文件夹。支持 wav、aiff、caf、mp3、m4a。文件名包含 space、enter、return、backspace 时，分别映射到对应按键，其余文件作为默认按键。已包含 `manifest.json` 的文件夹按原配置导入。
 
-导入结果保存在 `~/Library/Application Support/Plip/Soundpacks/`。也可直接在该目录放置如下结构：
+导入结果保存在用户数据目录的 `Soundpacks/` 下（macOS：`~/Library/Application Support/Plip/`，Windows：`%APPDATA%\Plip\`）。同名音效包以用户目录为准。也可直接在该目录放置如下结构：
 
 ```json
 {

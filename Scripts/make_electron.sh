@@ -3,25 +3,24 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+bash Scripts/check_version.sh
 VERSION="$(tr -d '[:space:]' < VERSION)"
 export PYTHON="${PYTHON:-/usr/bin/python3}"
 cd electron
-npm install
+npm ci
+mkdir -p ../artifacts
 if [[ "$(uname -s)" == "Darwin" ]]; then
   case "$(uname -m)" in
     arm64) EB_ARCH="arm64"; OUT_ARCH="arm64" ;;
     x86_64) EB_ARCH="x64"; OUT_ARCH="x86_64" ;;
     *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
   esac
-  npx --yes electron-builder@25.1.8 --mac zip --"$EB_ARCH" \
+  npx electron-builder --mac zip --"$EB_ARCH" \
     --config.extraMetadata.version="$VERSION"
-  built="dist/Plip-v${VERSION}-macos-${EB_ARCH}.zip"
-  mkdir -p ../artifacts
-  cp "$built" "../artifacts/Plip-v${VERSION}-macos-${OUT_ARCH}.zip"
+  cp "dist/Plip-v${VERSION}-macos-${EB_ARCH}.zip" "../artifacts/Plip-v${VERSION}-macos-${OUT_ARCH}.zip"
 else
-  npx --yes electron-builder@25.1.8 --win zip \
+  npx electron-builder --win zip --x64 \
     --config.extraMetadata.version="$VERSION"
-  mkdir -p ../artifacts
   cp "dist/Plip-v${VERSION}-windows-x64.zip" "../artifacts/Plip-v${VERSION}-windows-x64.zip"
 fi
 echo "Archive ready"

@@ -7,7 +7,7 @@
   "author": "Plip",
   "main": "main.js",
   "scripts": {
-    "test": "node player-engine.test.js && node pack-path.test.js && node panel-ui.test.js && node pack-import.test.js && node mute-policy.test.js"
+    "test": "node run-tests.js"
   },
   "build": {
     "appId": "app.plip.mac",
@@ -18,20 +18,43 @@
       "pack-path.js",
       "pack-import.js",
       "mute-policy.js",
-      { "from": "../ui", "to": "ui", "filter": ["*.html", "player-engine.js", "panel-ui.js"] }
+      {
+        "from": "../ui",
+        "to": "ui",
+        "filter": [
+          "*.html",
+          "player-engine.js",
+          "panel-ui.js"
+        ]
+      }
     ],
     "extraResources": [
-      { "from": "../Soundpacks", "to": "Soundpacks" },
-      { "from": "trayTemplate.png", "to": "trayTemplate.png" }
+      {
+        "from": "../Soundpacks",
+        "to": "Soundpacks"
+      },
+      {
+        "from": "trayTemplate.png",
+        "to": "trayTemplate.png"
+      }
     ],
     "mac": {
       "category": "public.app-category.music",
       "identity": null,
-      "target": ["zip"],
+      "target": [
+        "zip"
+      ],
       "artifactName": "Plip-v${version}-macos-${arch}.${ext}"
     },
     "win": {
-      "target": [{ "target": "zip", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "artifactName": "Plip-v${version}-windows-x64.${ext}"
     }
   },
@@ -39,6 +62,7 @@
     "uiohook-napi": "1.5.5"
   },
   "devDependencies": {
-    "electron": "33.4.11"
+    "electron": "33.4.11",
+    "electron-builder": "25.1.8"
   }
 }

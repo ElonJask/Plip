@@ -69,9 +69,11 @@ function harness() {
     smart: new El("button"),
     login: new El("button"),
     permission: new El("button"),
-    suppress: new El("div"),
-    loginMessage: new El("div"),
+    status: new El("div"),
+    statusLine: new El("div"),
+    loginExtra: new El("div"),
     loginOpen: new El("button"),
+    loginMessage: new El("div"),
     menu: new El("div"),
     pack: new El("button"),
     import: new El("button"),
@@ -122,12 +124,28 @@ ui.render({
 assert.strictEqual(nodes.muted.getAttribute("aria-checked"), "true");
 assert.strictEqual(nodes.combo.getAttribute("aria-checked"), "false");
 assert.strictEqual(nodes.login.getAttribute("aria-checked"), "true");
-assert.ok(!nodes.loginMessage.classList.contains("hidden"));
+assert.ok(!nodes.loginExtra.classList.contains("hidden"));
+assert.strictEqual(nodes.status.textContent, "已静音");
+assert.ok(nodes.statusLine.classList.contains("off"));
 assert.strictEqual(nodes.loginMessage.textContent, "需要登录项");
 
 const packButton = nodes.menu.children[1];
 packButton.click();
 assert.deepStrictEqual(sent[sent.length - 1], ["selectPack", "real-cream"]);
+
+ui.render({ ...first, suppressReason: "通话应用正在前台" });
+assert.strictEqual(nodes.status.textContent, "通话应用正在前台，已暂停");
+ui.render(first);
+assert.strictEqual(nodes.status.textContent, "正在监听按键");
+assert.ok(!nodes.statusLine.classList.contains("off"));
+assert.ok(nodes.loginExtra.classList.contains("hidden"));
+
+nodes.pack.click();
+assert.strictEqual(nodes.pack.getAttribute("aria-expanded"), "true");
+ui.escape();
+assert.strictEqual(nodes.pack.getAttribute("aria-expanded"), "false");
+ui.escape();
+assert.deepStrictEqual(sent[sent.length - 1], ["hide", undefined]);
 
 assert.ok(sameList([{ id: "a", name: "A" }], [{ id: "a", name: "A" }]));
 assert.ok(!sameList([{ id: "a", name: "A" }], [{ id: "b", name: "A" }]));
