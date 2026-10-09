@@ -421,7 +421,20 @@ function listen() {
     }
     play(keyNames[event.keycode] || "default");
   });
-  uIOhook.start();
+  startHook();
+}
+
+// 未授权辅助功能时 start 会失败；每 3 秒重试，授权后自动开始监听。
+let hookTimer = null;
+function startHook() {
+  clearTimeout(hookTimer);
+  Promise.resolve()
+    .then(() => uIOhook.start())
+    .then(() => publish(true))
+    .catch(() => {
+      if (quitting) return;
+      hookTimer = setTimeout(startHook, 3000);
+    });
 }
 
 function play(key) {
