@@ -17,6 +17,7 @@
       "player-preload.js",
       "pack-path.js",
       "pack-import.js",
+      "state.js",
       "mute-policy.js",
       {
         "from": "../ui",

@@ -6,6 +6,7 @@ const path = require("path");
 const { isPackSound } = require("./pack-path");
 const { importSelection } = require("./pack-import");
 const { decide } = require("./mute-policy");
+const { DEFAULTS, normalize, asBool } = require("./state");
 
 app.commandLine.appendSwitch("disable-renderer-backgrounding");
 app.commandLine.appendSwitch("disable-backgrounding-occluded-windows");
@@ -45,25 +46,14 @@ let holdingPanel = false;
 let frontBundleID = "";
 let suppressReason = "";
 const pendingPlays = [];
-let state = {
-  packID: "",
-  volume: 0.8,
-  muted: false,
-  combo: true,
-  smartMute: true,
-  login: false,
-  loginMessage: ""
-};
+let state = { ...DEFAULTS };
 
 function loadState() {
+  let raw = null;
   try {
-    state = { ...state, ...JSON.parse(fs.readFileSync(stateFile(), "utf8")) };
+    raw = JSON.parse(fs.readFileSync(stateFile(), "utf8"));
   } catch {}
-  state.volume = Math.max(0, Math.min(1, Number(state.volume) || 0.8));
-  state.muted = asBool(state.muted);
-  state.combo = state.combo !== false;
-  state.smartMute = state.smartMute !== false;
-  state.login = asBool(state.login);
+  state = normalize(raw);
 }
 
 function saveState() {
@@ -321,13 +311,22 @@ function applyLogin(enabled) {
   }
 }
 
+let refreshingFront = false;
+
+// 前台应用只用于「通话时静音」。功能关闭时不启动 osascript，也避免触发自动化授权弹窗。
 function refreshFrontApp(done) {
-  if (process.platform !== "darwin") {
+  if (process.platform !== "darwin" || !state.smartMute) {
     frontBundleID = "";
     if (done) done();
     return;
   }
+  if (refreshingFront) {
+    if (done) done();
+    return;
+  }
+  refreshingFront = true;
   execFile("osascript", ["-e", 'tell application "System Events" to get bundle identifier of first application process whose frontmost is true'], { timeout: 800 }, (err, stdout) => {
+    refreshingFront = false;
     if (!err) frontBundleID = String(stdout || "").trim();
     if (done) done();
   });
@@ -448,6 +447,14 @@ function startHook() {
 }
 
 function play(key) {
+  try {
+    strike(key);
+  } catch {
+    // 音效包配置损坏时不影响监听，下次按键重试。
+  }
+}
+
+function strike(key) {
   if (state.muted) return;
   const mute = decide({
     smartMuteEnabled: state.smartMute,
@@ -473,13 +480,9 @@ function play(key) {
   const semitones = jitter + comboCount * (rules.combo_pitch_step || 0);
   sendPlay({
     file: path.join(current.dir, file),
-    volume: (mapping.volume || 0.8) * state.volume,
+    volume: (typeof mapping.volume === "number" ? mapping.volume : 0.8) * state.volume,
     rate: Math.pow(2, semitones / 12)
   });
-}
-
-function asBool(value) {
-  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 if (gotLock) app.whenReady().then(() => {
@@ -546,7 +549,7 @@ ipcMain.on("setCombo", (_event, value) => {
 ipcMain.on("setSmartMute", (_event, value) => {
   state.smartMute = asBool(value);
   saveState();
-  publish();
+  refreshFrontApp(() => publish());
 });
 ipcMain.on("setLogin", (_event, value) => {
   applyLogin(asBool(value));
@@ -554,6 +557,7 @@ ipcMain.on("setLogin", (_event, value) => {
   publish();
 });
 ipcMain.on("selectPack", (_event, id) => {
+  if (!packs.some((pack) => pack.id === id)) return;
   state.packID = id;
   saveState();
   publish();
@@ -574,13 +578,21 @@ ipcMain.on("importPack", async () => {
     filters: [{ name: "音频或音效包", extensions: ["wav", "aiff", "aif", "caf", "mp3", "m4a", "json"] }]
   }));
   if (!result || result.canceled || !result.filePaths.length) return;
-  const id = importSelection(result.filePaths, userPacksDir());
-  readPacks();
-  if (id) {
-    state.packID = id;
-    saveState();
-    loadCurrentPackIntoPlayer();
+  let id = "";
+  try {
+    id = importSelection(result.filePaths, userPacksDir());
+  } catch (error) {
+    dialog.showErrorBox("无法添加音效包", String((error && error.message) || error));
+    return;
   }
+  if (!id) {
+    dialog.showErrorBox("没有找到可用的音频", "请选择 wav、aiff、caf、mp3、m4a 音频文件，或包含 manifest.json 的音效包文件夹。");
+    return;
+  }
+  readPacks();
+  state.packID = id;
+  saveState();
+  loadCurrentPackIntoPlayer();
   loadAllPacksIntoPlayer();
   publish();
 });
@@ -588,6 +600,7 @@ ipcMain.on("quit", () => app.quit());
 
 app.on("before-quit", () => {
   quitting = true;
+  clearTimeout(hookTimer);
   try { uIOhook.stop(); } catch {}
 });
 app.on("window-all-closed", (event) => event.preventDefault());
