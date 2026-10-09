@@ -14,5 +14,7 @@ jobs:
           node-version: 20
       - name: Version matches Info.plist
         run: bash Scripts/check_version.sh
+      - name: Player engine
+        run: node electron/player-engine.test.js && node electron/pack-path.test.js && node electron/panel-ui.test.js && node electron/pack-import.test.js && node electron/mute-policy.test.js
       - name: Electron package
         run: bash Scripts/make_electron.sh

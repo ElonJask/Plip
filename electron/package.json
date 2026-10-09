@@ -6,12 +6,19 @@
   "description": "菜单栏按键声",
   "author": "Plip",
   "main": "main.js",
+  "scripts": {
+    "test": "node player-engine.test.js && node pack-path.test.js && node panel-ui.test.js && node pack-import.test.js && node mute-policy.test.js"
+  },
   "build": {
     "appId": "app.plip.mac",
     "files": [
       "main.js",
       "preload.js",
-      { "from": "../ui", "to": "ui", "filter": ["*.html"] }
+      "player-preload.js",
+      "pack-path.js",
+      "pack-import.js",
+      "mute-policy.js",
+      { "from": "../ui", "to": "ui", "filter": ["*.html", "player-engine.js", "panel-ui.js"] }
     ],
     "extraResources": [
       { "from": "../Soundpacks", "to": "Soundpacks" },

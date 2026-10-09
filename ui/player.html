@@ -1,2 +1,22 @@
 <!doctype html>
-<html><body></body></html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<script src="player-engine.js"></script>
+<script>
+(() => {
+  const api = window.plipPlayer;
+  if (!api || !window.PlipPlayer) return;
+  const engine = window.PlipPlayer.create({
+    AudioContext: window.AudioContext,
+    readSound: (file) => api.readSound(file)
+  });
+  if (api.onPlay) api.onPlay((strike) => engine.play(strike));
+  if (api.onLoadPack) api.onLoadPack((payload) => { engine.loadPack(payload).catch(() => {}); });
+  document.addEventListener("visibilitychange", () => { engine.resume(); });
+  setInterval(() => { engine.resume(); }, 4000);
+  if (api.ready) api.ready();
+})();
+</script>
+</body>
+</html>
