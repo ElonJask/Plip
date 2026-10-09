@@ -16,7 +16,7 @@ import urllib.error
 import urllib.request
 import wave
 
-FFMPEG = "/opt/homebrew/bin/ffmpeg"
+FFMPEG = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
 PACKS_DIR = os.path.join(ROOT, "Soundpacks")
